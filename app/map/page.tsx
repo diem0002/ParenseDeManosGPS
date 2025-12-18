@@ -62,6 +62,17 @@ function MapContent() {
             return { ...prev, bets: [...otherBets, newBet] };
         });
 
+        // Save to localStorage (GLOBAL, not per group)
+        try {
+            const myBetsKey = `pdm_my_bets_${userId}`;
+            const existingBets = JSON.parse(localStorage.getItem(myBetsKey) || '[]');
+            const updatedMyBets = existingBets.filter((b: any) => b.fightId !== fightId);
+            updatedMyBets.push(newBet);
+            localStorage.setItem(myBetsKey, JSON.stringify(updatedMyBets));
+        } catch (e) {
+            console.error('Failed to save bet locally', e);
+        }
+
         // API Call
         try {
             await fetch('/api/bets', {
@@ -73,6 +84,30 @@ function MapContent() {
             console.error('Vote failed', e);
         }
     };
+
+    // Restore my bets from localStorage on mount
+    useEffect(() => {
+        if (!userId || !group) return;
+
+        try {
+            const myBetsKey = `pdm_my_bets_${userId}`;
+            const savedBets = localStorage.getItem(myBetsKey);
+            if (savedBets) {
+                const myBets = JSON.parse(savedBets);
+                // Merge my saved bets into the group
+                setGroup(prev => {
+                    if (!prev) return null;
+                    const serverBets = prev.bets || [];
+                    // Remove any old bets from me in server data
+                    const othersBets = serverBets.filter(b => b.userId !== userId);
+                    // Combine with my local bets
+                    return { ...prev, bets: [...othersBets, ...myBets] };
+                });
+            }
+        } catch (e) {
+            console.error('Failed to restore bets', e);
+        }
+    }, [userId, group?.id]); // Run when group changes
 
     // Validate session
     useEffect(() => {
