@@ -55,31 +55,37 @@ export const VenueMap: React.FC<VenueMapProps> = ({
                         />
 
                         {/* Users */}
-                        {renderedUsers.map((user) => (
-                            <div
-                                key={user.id}
-                                className={clsx(
-                                    "absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-linear z-10",
-                                )}
-                                style={{ left: user.mapPos.x, top: user.mapPos.y }}
-                            >
-                                <div className={clsx(
-                                    "w-4 h-4 rounded-full border-2 shadow-[0_0_10px_rgba(0,0,0,0.5)]",
-                                    user.id === currentUser?.id
-                                        ? "bg-brand-red border-white z-20 scale-125 animate-pulse"
-                                        : "bg-white border-brand-red"
-                                )} />
-                                <span className={clsx(
-                                    "text-[10px] px-1 rounded mt-1 whitespace-nowrap font-bold",
-                                    user.id === currentUser?.id
-                                        ? "bg-brand-red text-white"
-                                        : "bg-black/70 text-white"
-                                )}>
-                                    {user.name}
-                                    {user.id === currentUser?.id && " (Tú)"}
-                                </span>
-                            </div>
-                        ))}
+                        {renderedUsers.map((user) => {
+                            const isOffMap = user.mapPos.x < -2000 || user.mapPos.x > 3000 || user.mapPos.y < -2000 || user.mapPos.y > 3000;
+
+                            if (isOffMap) return null; // Don't render extremely far users to avoid layout bugs
+
+                            return (
+                                <div
+                                    key={user.id}
+                                    className={clsx(
+                                        "absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-linear z-10",
+                                    )}
+                                    style={{ left: user.mapPos.x, top: user.mapPos.y }}
+                                >
+                                    <div className={clsx(
+                                        "w-4 h-4 rounded-full border-2 shadow-[0_0_10px_rgba(0,0,0,0.5)]",
+                                        user.id === currentUser?.id
+                                            ? "bg-brand-red border-white z-20 scale-125 animate-pulse"
+                                            : "bg-white border-brand-red"
+                                    )} />
+                                    <span className={clsx(
+                                        "text-[10px] px-1 rounded mt-1 whitespace-nowrap font-bold",
+                                        user.id === currentUser?.id
+                                            ? "bg-brand-red text-white"
+                                            : "bg-black/70 text-white"
+                                    )}>
+                                        {user.name}
+                                        {user.id === currentUser?.id && " (Tú)"}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </TransformComponent>
             </TransformWrapper>

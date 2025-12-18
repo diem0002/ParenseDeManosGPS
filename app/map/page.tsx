@@ -110,6 +110,35 @@ function MapContent() {
                                 calibration={group?.calibration}
                             />
                         </div>
+
+                        {/* Developer Simulation Toggle */}
+                        <div className="absolute bottom-4 left-4 z-50">
+                            <button
+                                onClick={() => {
+                                    // Toggle simulation logic could go here, but for now we'll just use a browser console hack
+                                    // or a hidden feature.
+                                    // Easier: Add a dedicated button to teleport if userId matches
+                                    if (currentUser) {
+                                        // Force update location to stadium center for testing
+                                        fetch('/api/location', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                userId: currentUser.id,
+                                                lat: -34.643494, // Center of Huracan
+                                                lng: -58.396511
+                                            })
+                                        });
+                                    }
+                                }}
+                                className="bg-black/80 text-white text-[10px] px-2 py-1 rounded border border-white/20 opacity-50 hover:opacity-100 uppercase tracking-widest"
+                            >
+                                🧪 Test: Teletransportar al Estadio
+                            </button>
+                            <p className="text-[9px] text-gray-400 bg-black/50 p-1 mt-1 rounded max-w-[200px]">
+                                Úsalo si no estás físicamente en el evento para verte en el mapa.
+                            </p>
+                        </div>
                     </div>
 
                     {/* Member List */}
