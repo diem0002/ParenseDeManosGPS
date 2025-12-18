@@ -1,0 +1,22 @@
+{
+    "name": "Parense de Manos GPS",
+    "short_name": "PDM GPS",
+    "description": "Rastreador de ubicación en tiempo real para eventos",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#D50000",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
