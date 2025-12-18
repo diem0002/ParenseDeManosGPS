@@ -35,44 +35,56 @@ export default function Home() {
     }
   });
 
-  const handleSubmit = async (e: React.FormEvent, isRejoin: boolean = false) => {
-    if (e) e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
     setLoading(true);
     setError('');
 
-    const targetCode = isRejoin ? lastSession?.groupCode : (mode === 'join' ? groupCode : undefined);
-    const targetName = isRejoin ? lastSession?.name : name;
-
     try {
+      // Generate or retrieve persistent userId from localStorage
+      let persistentUserId = localStorage.getItem('pdm_persistent_user_id');
+      if (!persistentUserId) {
+        persistentUserId = Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('pdm_persistent_user_id', persistentUserId);
+        console.log('🆔 Created new persistent userId:', persistentUserId);
+      } else {
+        console.log('🆔 Using existing persistent userId:', persistentUserId);
+      }
+
+      // Join or create group
       const res = await fetch('/api/groups/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: targetName,
-          groupCode: targetCode,
-          action: isRejoin ? 'create' : mode, // Trick: Rejoin tries to CREATE with old ID to resurrect it
-          calibration: (mode === 'create' || isRejoin) ? {
+          name,
+          groupCode: groupCode || undefined,
+          action: groupCode ? 'join' : 'create',
+          calibration: {
             p1: { gps: { lat: -34.643494, lng: -58.396511 }, map: { x: 500, y: 500 } },
             p2: { gps: { lat: -34.644494, lng: -58.396511 }, map: { x: 500, y: 900 } },
             scale: 1
-          } : undefined
-        }),
+          }
+        })
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to join/create group');
+      }
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to join group');
-      }
-
+      // Save session to localStorage for recovery
       localStorage.setItem('venue_tracker_user', JSON.stringify({
-        userId: data.user.id,
-        name: data.user.name,
+        name,
+        userId: persistentUserId,
         groupCode: data.group.id
       }));
 
-      router.push(`/map?code=${data.group.id}&uid=${data.user.id}`);
-
+      // Navigate to map with persistent userId
+      router.push(`/map?code=${data.group.id}&uid=${persistentUserId}`);
     } catch (err: any) {
       setError(err.message);
     } finally {
