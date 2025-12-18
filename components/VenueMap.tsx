@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { User, VenueCalibration } from '@/lib/types';
-import { projectToMap } from '@/lib/geometry';
+import { projectToMap, haversineDistance } from '@/lib/geometry';
 import clsx from 'clsx';
 import Image from 'next/image';
 
@@ -22,20 +22,37 @@ export const VenueMap: React.FC<VenueMapProps> = ({
 }) => {
     // Memoize users positions to avoid excessive recalculations if not needed,
     // though projection is cheap.
+    // 1. Calculate mapped positions for ALL users (including current)
+    const renderedUsers = useMemo(() => {
+        if (!calibration) return [];
+        return users.map((u) => {
+            if (!u.lastLocation) return null;
+            const pos = projectToMap(u.lastLocation, calibration);
+            return { ...u, mapPos: pos };
+        }).filter((u): u is User & { mapPos: { x: number, y: number } } => u !== null);
+    }, [users, calibration]);
+
+    // 2. Find current user with map position
+    const currentRenderedUser = useMemo(() =>
+        renderedUsers.find(u => u.id === currentUser?.id),
+        [renderedUsers, currentUser]);
+
+    // 3. Calculate lines from current user to others
     const distanceLines = useMemo(() => {
-        if (!currentUser || !currentUser.mapPos) return [];
+        if (!currentRenderedUser) return [];
+
         return renderedUsers.map(user => {
-            if (user.id === currentUser.id) return null;
+            if (user.id === currentRenderedUser.id) return null;
             return {
                 id: user.id,
-                x1: currentUser.mapPos!.x,
-                y1: currentUser.mapPos!.y,
+                x1: currentRenderedUser.mapPos.x,
+                y1: currentRenderedUser.mapPos.y,
                 x2: user.mapPos.x,
                 y2: user.mapPos.y,
-                dist: Math.round(haversineDistance(currentUser.lastLocation!, user.lastLocation!))
+                dist: Math.round(haversineDistance(currentUser!.lastLocation!, user.lastLocation!))
             };
         }).filter((l): l is { id: string, x1: number, y1: number, x2: number, y2: number, dist: number } => l !== null);
-    }, [currentUser, renderedUsers]);
+    }, [currentRenderedUser, renderedUsers, currentUser]);
 
     if (!calibration) {
         return (
