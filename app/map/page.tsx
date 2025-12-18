@@ -85,21 +85,27 @@ function MapContent() {
         }
     };
 
-    // Restore and sync my bets (AGGRESSIVE STRATEGY)
+    // Restore and sync my bets (AGGRESSIVE STRATEGY + SERVER RESTART PROTECTION)
+    const lastBetsCountRef = useRef(0);
+
     useEffect(() => {
         if (!userId || !group) return;
 
         const myBetsKey = `pdm_my_bets_${userId}`;
+        const currentBetsCount = (group.bets || []).length;
 
         try {
             // 1. Load my bets from localStorage
             const savedBets = localStorage.getItem(myBetsKey);
             const myLocalBets = savedBets ? JSON.parse(savedBets) : [];
 
-            if (myLocalBets.length > 0) {
-                console.log('📊 Syncing my bets:', myLocalBets);
+            // 2. Detect server restart: if bets suddenly disappeared
+            const serverRestarted = lastBetsCountRef.current > 0 && currentBetsCount === 0;
 
-                // 2. Inject my local bets into the group state
+            if (myLocalBets.length > 0 && (serverRestarted || currentBetsCount === 0)) {
+                console.log('📊 Syncing my bets (server restart detected):', myLocalBets);
+
+                // 3. Inject my local bets into the group state IMMEDIATELY
                 setGroup(prev => {
                     if (!prev) return null;
                     const serverBets = prev.bets || [];
@@ -109,7 +115,7 @@ function MapContent() {
                     return { ...prev, bets: [...othersBets, ...myLocalBets] };
                 });
 
-                // 3. Upload each bet to server (fire and forget)
+                // 4. Upload each bet to server (fire and forget)
                 myLocalBets.forEach((bet: any) => {
                     fetch('/api/bets', {
                         method: 'POST',
@@ -124,10 +130,12 @@ function MapContent() {
                     }).catch(e => console.warn('Bet upload failed:', e));
                 });
             }
+
+            lastBetsCountRef.current = currentBetsCount;
         } catch (e) {
             console.error('Failed to sync bets', e);
         }
-    }, [userId, group?.id, groupCode]); // Re-sync when group changes
+    }, [userId, group?.bets, groupCode]); // Re-sync when bets change (detects server restart)
 
     // Validate session
     useEffect(() => {
