@@ -81,8 +81,9 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 if (e.message === 'GROUP_NOT_FOUND') {
                     onError('GROUP_NOT_FOUND');
                 } else {
-                    console.error('Polling error', e);
-                    // Don't spam UI with network jitters, only critical
+                    console.warn('Polling jitter (retrying silently):', e.message);
+                    // Do NOT call onError here. Network flakiness is normal on mobile.
+                    // Let the UI keep showing cached state.
                 }
             }
         };
