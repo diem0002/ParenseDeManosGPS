@@ -85,15 +85,19 @@ function MapContent() {
         }
     };
 
-    // Restore my bets from localStorage on mount
+    // Restore my bets from localStorage on mount (ONCE per group load)
+    const hasRestoredBets = useRef(false);
+
     useEffect(() => {
-        if (!userId || !group) return;
+        if (!userId || !group || hasRestoredBets.current) return;
 
         try {
             const myBetsKey = `pdm_my_bets_${userId}`;
             const savedBets = localStorage.getItem(myBetsKey);
             if (savedBets) {
                 const myBets = JSON.parse(savedBets);
+                console.log('Restoring my bets from localStorage:', myBets);
+
                 // Merge my saved bets into the group
                 setGroup(prev => {
                     if (!prev) return null;
@@ -103,11 +107,13 @@ function MapContent() {
                     // Combine with my local bets
                     return { ...prev, bets: [...othersBets, ...myBets] };
                 });
+
+                hasRestoredBets.current = true;
             }
         } catch (e) {
             console.error('Failed to restore bets', e);
         }
-    }, [userId, group?.id]); // Run when group changes
+    }, [userId, group]); // Run when group becomes available
 
     // Validate session
     useEffect(() => {
