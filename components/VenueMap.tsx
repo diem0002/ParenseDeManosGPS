@@ -37,40 +37,45 @@ export const VenueMap: React.FC<VenueMapProps> = ({
     }
 
     return (
-        <div className="w-full h-[60vh] bg-slate-900 overflow-hidden relative border-2 border-slate-700 rounded-lg shadow-xl">
+    return (
+        <div className="w-full h-full bg-black/20 overflow-hidden relative">
             <TransformWrapper
                 initialScale={1}
-                minScale={0.5}
-                maxScale={4}
+                minScale={0.2}
+                maxScale={8}
                 centerOnInit
+                limitToBounds={false}
             >
-                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full">
-                    <div className="relative" style={{ width: '1000px', height: '1000px' }}> {/* Fixed container for coordinate system sanity */}
+                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
+                    <div className="relative shadow-2xl" style={{ width: '1000px', height: '1000px' }}>
                         {/* Map Base */}
                         <img
                             src={mapImage || "/placeholder-map.svg"}
                             alt="Venue Map"
-                            className="w-full h-full object-contain pointer-events-none select-none"
+                            className="w-full h-full object-contain pointer-events-none select-none drop-shadow-2xl"
                         />
-
-                        {/* Reference Points (Visual Debug) */}
-                        {/* <div className="absolute w-4 h-4 bg-red-500 rounded-full" style={{ left: calibration.p1.map.x, top: calibration.p1.map.y }} /> */}
-                        {/* <div className="absolute w-4 h-4 bg-blue-500 rounded-full" style={{ left: calibration.p2.map.x, top: calibration.p2.map.y }} /> */}
 
                         {/* Users */}
                         {renderedUsers.map((user) => (
                             <div
                                 key={user.id}
                                 className={clsx(
-                                    "absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-linear",
+                                    "absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-linear z-10",
                                 )}
                                 style={{ left: user.mapPos.x, top: user.mapPos.y }}
                             >
                                 <div className={clsx(
-                                    "w-4 h-4 rounded-full border-2 shadow-sm",
-                                    user.id === currentUser?.id ? "bg-blue-500 border-white z-10 scale-125" : "bg-green-500 border-white"
+                                    "w-4 h-4 rounded-full border-2 shadow-[0_0_10px_rgba(0,0,0,0.5)]",
+                                    user.id === currentUser?.id
+                                        ? "bg-brand-red border-white z-20 scale-125 animate-pulse"
+                                        : "bg-white border-brand-red"
                                 )} />
-                                <span className="text-[10px] bg-black/50 text-white px-1 rounded mt-1 whitespace-nowrap">
+                                <span className={clsx(
+                                    "text-[10px] px-1 rounded mt-1 whitespace-nowrap font-bold",
+                                    user.id === currentUser?.id
+                                        ? "bg-brand-red text-white"
+                                        : "bg-black/70 text-white"
+                                )}>
                                     {user.name}
                                     {user.id === currentUser?.id && " (Tú)"}
                                 </span>
@@ -79,6 +84,12 @@ export const VenueMap: React.FC<VenueMapProps> = ({
                     </div>
                 </TransformComponent>
             </TransformWrapper>
+
+            {/* Compass / North indicator (optional aesthetic) */}
+            <div className="absolute top-4 right-4 text-white/20 pointer-events-none">
+                <div className="border-2 border-current w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs">N</div>
+            </div>
         </div>
+    );
     );
 };
