@@ -50,10 +50,25 @@ function MapContent() {
         e.preventDefault();
         if (!chatMessage.trim() || !userId || !groupCode) return;
 
-        try {
-            // Optimistic update (optional, but good for UX)
-            // For now rely on server
+        // Optimistic UI Update
+        const tempMessage = {
+            id: 'temp-' + Date.now(),
+            senderId: userId,
+            senderName: currentUser?.name || 'Yo',
+            text: chatMessage,
+            timestamp: Date.now()
+        };
 
+        if (group) {
+            setGroup({
+                ...group,
+                messages: [...(group.messages || []), tempMessage]
+            });
+        }
+
+        setChatMessage('');
+
+        try {
             await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -61,10 +76,9 @@ function MapContent() {
                     groupId: groupCode,
                     userId,
                     userName: currentUser?.name || 'Unknown',
-                    text: chatMessage
+                    text: tempMessage.text
                 })
             });
-            setChatMessage('');
         } catch (e) {
             console.error('Send failed', e);
         }
@@ -75,7 +89,7 @@ function MapContent() {
         if (activeTab === 'chat' || window.innerWidth > 768) {
             chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [group?.messages, activeTab]);
+    }, [group?.messages?.length, activeTab]);
 
     const currentUser = members.find(u => u.id === userId);
 
@@ -264,7 +278,11 @@ function MapContent() {
                                 </div>
                                 {member.id !== userId && currentUser?.lastLocation && member.lastLocation && (
                                     <div className="text-brand-red font-bold text-sm bg-brand-red/10 px-2 py-1 rounded">
-                                        {haversineDistance(currentUser.lastLocation, member.lastLocation).toFixed(0)}m
+                                        <Navigation className="w-3 h-3 inline mr-1" />
+                                        {(() => {
+                                            const d = haversineDistance(currentUser.lastLocation!, member.lastLocation!);
+                                            return d < 20 ? 'Cerca' : `${d.toFixed(0)}m`;
+                                        })()}
                                     </div>
                                 )}
                             </div>
