@@ -36,6 +36,15 @@ export interface ChatMessage {
     timestamp: number;
 }
 
+export interface Bet {
+    id: string;
+    userId: string;
+    userName: string;
+    fightId: string;
+    prediction: 'A' | 'B';
+    timestamp: number;
+}
+
 export interface Group {
     id: string; // Creates a human readable code (e.g. "AE34")
     name: string;
@@ -44,4 +53,5 @@ export interface Group {
     calibration?: VenueCalibration;
     mapImage?: string; // URL o base64 (por ahora hardcoded/default)
     messages: ChatMessage[];
+    bets: Bet[];
 }
