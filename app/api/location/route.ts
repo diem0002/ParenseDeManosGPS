@@ -3,24 +3,22 @@ import { store } from '@/lib/store';
 
 export async function POST(request: Request) {
     try {
-        const { userId, lat, lng } = await request.json();
+        const body = await request.json();
+        const { userId, lat, lng } = body;
 
         if (!userId || lat === undefined || lng === undefined) {
-            return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+            return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
         }
 
-        const updatedUser = store.updateLocation(userId, lat, lng);
+        const user = store.updateLocation(userId, lat, lng);
 
-        if (!updatedUser) {
-            // In a real app we might handle reconnection here,
-            // but for now we assume client has a valid ID.
+        if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true });
-
-    } catch (error) {
-        console.error('Location update error:', error);
+        return NextResponse.json({ success: true, user });
+    } catch (e) {
+        console.error('Location update error:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
