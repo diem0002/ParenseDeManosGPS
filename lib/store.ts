@@ -21,7 +21,8 @@ class InMemoryStore {
             members: [],
             createdAt: Date.now(),
             calibration,
-            mapImage: '/venue-map.png' // Default map for new groups
+            mapImage: '/venue-map.png', // Default map for new groups
+            messages: []
         };
         this.groups.set(id, group);
         return group;
@@ -71,6 +72,26 @@ class InMemoryStore {
         user.isOnline = true;
 
         return user;
+    }
+
+    addMessage(groupId: string, senderId: string, senderName: string, text: string) {
+        const group = this.groups.get(groupId);
+        if (!group) return;
+
+        const message = {
+            id: Math.random().toString(36).substring(2, 9),
+            senderId,
+            senderName,
+            text,
+            timestamp: Date.now()
+        };
+
+        group.messages.push(message);
+        // Keep last 50 messages
+        if (group.messages.length > 50) {
+            group.messages.shift();
+        }
+        return message;
     }
 
     getGroupMembers(groupId: string): User[] {

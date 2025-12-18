@@ -28,6 +28,14 @@ export interface User {
     isOnline: boolean;
 }
 
+export interface ChatMessage {
+    id: string;
+    senderId: string;
+    senderName: string;
+    text: string;
+    timestamp: number;
+}
+
 export interface Group {
     id: string; // Creates a human readable code (e.g. "AE34")
     name: string;
@@ -35,4 +43,5 @@ export interface Group {
     createdAt: number;
     calibration?: VenueCalibration;
     mapImage?: string; // URL o base64 (por ahora hardcoded/default)
+    messages: ChatMessage[];
 }
