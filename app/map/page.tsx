@@ -103,24 +103,28 @@ function MapContent() {
             {/* Background Overlay */}
             <div className="absolute inset-0 bg-[url('/hero-bg.png')] opacity-10 bg-cover bg-center pointer-events-none z-0 mix-blend-overlay" />
 
-            {/* HEADER FIJO (Siempre visible en móvil) */}
-            <header className="flex-none h-14 bg-black/90 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-4 z-50">
-                <div className="flex items-center space-x-2">
-                    <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-md" />
+            {/* HEADER FIJO (Siempre visible en móvil - Z-INDEX 60 = ABOVE EVERYTHING) */}
+            <header className="flex-none h-16 bg-black/95 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-4 z-[60] shadow-lg">
+                <div className="flex items-center space-x-3">
+                    {/* RESTORED ORIGINAL LOGO */}
+                    <Image src="/logo.png" alt="Logo" width={40} height={40} className="object-contain" />
                     <div>
                         <h1 className="font-bold text-white text-xs tracking-wider uppercase leading-tight">PARENSE DE MANOS</h1>
-                        <p className="text-[10px] text-brand-red font-bold">CODE: {groupCode}</p>
+                        {/* INCREASED FONT SIZE FOR CODE VISIBILITY */}
+                        <p className="text-xs text-brand-red font-bold font-mono tracking-widest bg-white/5 px-2 py-0.5 rounded mt-0.5 border border-white/5">
+                            CODE: {groupCode}
+                        </p>
                     </div>
                 </div>
                 <div>
-                    <button onClick={() => setShowItinerary(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 active:bg-white/30 transition-colors">
-                        <Calendar className="w-4 h-4 text-white" />
+                    <button onClick={() => setShowItinerary(true)} className="p-2.5 bg-white/10 rounded-full hover:bg-white/20 active:bg-white/30 transition-colors">
+                        <Calendar className="w-5 h-5 text-white" />
                     </button>
                 </div>
             </header>
 
             {/* AREA PRINCIPAL (Flexible) */}
-            <main className="flex-1 relative overflow-hidden w-full">
+            <main className="flex-1 relative overflow-hidden w-full bg-black">
 
                 <LocationManager
                     userId={userId}
@@ -138,6 +142,7 @@ function MapContent() {
                 )}
 
                 {/* --- CAPA 1: MAPA (Fondo siempre presente) --- */}
+                {/* Always rendered, z-0. Overlays will cover it visually but layout remains stable. */}
                 <div className="absolute inset-0 z-0">
                     <VenueMap
                         mapImage={group?.mapImage || ""}
@@ -148,14 +153,11 @@ function MapContent() {
                 </div>
 
                 {/* --- CAPA 2: PANELES SUPERPUESTOS (Chat / Gente) --- */}
-                {/* Usamos absolute + z-index para mostrar/ocultar sin desmontar si queremos preservar estado,
-                    o renderizado condicional. Renderizado condicional es más limpio para evitar scroll fantasma. */}
 
                 {/* CHAT PANEL */}
                 {activeTab === 'chat' && (
                     <div className="absolute inset-0 z-20 flex flex-col bg-black/95 animate-in fade-in zoom-in-95 duration-200">
-                        {/* Empty header spacer if needed, or just content */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20"> {/* pb-20 for bottom safe area if needed, though input is sticky */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
                             {messages.length === 0 && (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50">
                                     <MessageSquare className="w-12 h-12 mb-2" />
@@ -222,7 +224,7 @@ function MapContent() {
             </main>
 
             {/* NAV BAR FIJA (Siempre visible abajo) */}
-            <nav className="flex-none h-20 bg-black/95 border-t border-white/10 flex justify-around items-center px-2 pb-safe z-50">
+            <nav className="flex-none h-20 bg-black/95 border-t border-white/10 flex justify-around items-center px-2 pb-safe z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
                 <button
                     onClick={() => setActiveTab('map')}
                     className={clsx("flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 w-1/3 active:scale-95", activeTab === 'map' ? "text-brand-red" : "text-gray-500")}
@@ -256,7 +258,7 @@ function MapContent() {
                 </button>
             </nav>
 
-            {/* Itinerary Modal (Global) */}
+            {/* Itinerary Modal (Global) - Z-INDEX 100 ABOVE EVERYTHING */}
             {showItinerary && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="relative w-full max-w-lg bg-black/90 rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
