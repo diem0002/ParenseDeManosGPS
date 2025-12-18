@@ -25,6 +25,8 @@ function MapContent() {
     const [error, setError] = useState('');
     const [showItinerary, setShowItinerary] = useState(false);
 
+    const currentUser = members.find(u => u.id === userId);
+
     // UI State
     const [activeTab, setActiveTab] = useState<'map' | 'chat' | 'members'>('map');
     const [chatMessage, setChatMessage] = useState('');
@@ -133,7 +135,7 @@ function MapContent() {
         }
     }, [group?.messages, activeTab, userId]);
 
-    const currentUser = members.find(u => u.id === userId);
+
 
     if (!groupCode || !userId) return null;
 
