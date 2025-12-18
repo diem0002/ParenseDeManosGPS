@@ -43,8 +43,39 @@ function MapContent() {
     }, []);
 
     const handleError = useCallback((msg: string) => {
-        setError(msg);
-    }, []);
+        if (msg === 'GROUP_NOT_FOUND') {
+            // Attempt auto-resurrection
+            console.log('Group lost, attempting resurrection...');
+            fetch('/api/groups/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: currentUser?.name || 'User', // Fallback name
+                    groupCode: groupCode,
+                    action: 'create', // Explicitly recreate
+                    calibration: { // Re-send default calibration
+                        p1: { gps: { lat: -34.643494, lng: -58.396511 }, map: { x: 500, y: 500 } },
+                        p2: { gps: { lat: -34.644494, lng: -58.396511 }, map: { x: 500, y: 900 } },
+                        scale: 1
+                    }
+                })
+            }).then(async (res) => {
+                if (res.ok) {
+                    const data = await res.json();
+                    // Silent recovery
+                    setGroup(data.group);
+                } else {
+                    setError('SESIÓN EXPIRADA. Saliendo...');
+                    setTimeout(() => router.push('/'), 2000);
+                }
+            }).catch(() => {
+                setError('SESIÓN EXPIRADA. Saliendo...');
+                setTimeout(() => router.push('/'), 2000);
+            });
+        } else {
+            setError(msg);
+        }
+    }, [groupCode, currentUser, router]);
 
     const sendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -150,6 +181,22 @@ function MapContent() {
                         currentUser={currentUser}
                         calibration={group?.calibration}
                     />
+
+                    {/* ZONE ALERT OVERLAY */}
+                    {currentUser?.lastLocation && (() => {
+                        // Simple 800m radius check from Stadium Center (P1 approx)
+                        const center = { lat: -34.643494, lng: -58.396511 };
+                        const dist = haversineDistance(currentUser.lastLocation, center);
+                        if (dist > 800) {
+                            return (
+                                <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-600 px-4 py-2 rounded-full shadow-lg z-10 animate-bounce flex items-center whitespace-nowrap">
+                                    <AlertTriangle className="w-4 h-4 text-white mr-2" />
+                                    <span className="text-white font-black uppercase text-xs tracking-widest">FUERA DE ZONA ({Math.round(dist)}m)</span>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
                 </div>
 
                 {/* --- CAPA 2: PANELES SUPERPUESTOS (Chat / Gente) --- */}

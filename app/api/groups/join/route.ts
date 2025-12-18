@@ -20,7 +20,8 @@ export async function POST(request: Request) {
         let group;
 
         if (action === 'create') {
-            group = store.createGroup(name + "'s Group", calibration);
+            // Support restoring a previous group ID if provided
+            group = store.createGroup(name + "'s Group", calibration, groupId);
             groupId = group.id;
         } else {
             if (!groupId) {
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
             }
             group = store.getGroup(groupId);
             if (!group) {
+                // If action is JOIN and group not found, returns 404
                 return NextResponse.json({ error: 'Group not found' }, { status: 404 });
             }
         }

@@ -64,11 +64,19 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
         const poll = async () => {
             try {
                 const res = await fetch(`/api/groups/${groupCode}`);
+                if (res.status === 404) {
+                    throw new Error('GROUP_NOT_FOUND');
+                }
                 if (!res.ok) throw new Error('Failed to fetch group');
                 const data = await res.json();
                 onGroupUpdate(data.group, data.members);
-            } catch (e) {
-                console.error('Polling error', e);
+            } catch (e: any) {
+                if (e.message === 'GROUP_NOT_FOUND') {
+                    onError('GROUP_NOT_FOUND');
+                } else {
+                    console.error('Polling error', e);
+                    // Don't spam UI with network jitters, only critical
+                }
             }
         };
 

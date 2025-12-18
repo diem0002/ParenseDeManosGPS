@@ -13,15 +13,20 @@ class InMemoryStore {
         this.users = new Map();
     }
 
-    createGroup(name: string, calibration?: any): Group {
-        const id = Math.random().toString(36).substring(2, 6).toUpperCase();
+    createGroup(name: string, calibration?: any, requestedId?: string): Group {
+        const id = requestedId || Math.random().toString(36).substring(2, 6).toUpperCase();
+        // Prevent overwriting if it exists (though unlikely with random, relevant for forced)
+        if (this.groups.has(id) && !requestedId) {
+            return this.createGroup(name, calibration); // Retry random
+        }
+
         const group: Group = {
             id,
             name,
             members: [],
             createdAt: Date.now(),
             calibration,
-            mapImage: '/venue-map.png', // Default map for new groups
+            mapImage: '/venue-map.png',
             messages: []
         };
         this.groups.set(id, group);

@@ -13,24 +13,46 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [lastSession, setLastSession] = useState<{ userId: string, name: string, groupCode: string } | null>(null);
+
+  useState(() => {
+    // Check local storage on mount (lazy init)
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('venue_tracker_user');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.groupCode) {
+            setLastSession(parsed);
+            // Pre-fill
+            setName(parsed.name || '');
+            setGroupCode(parsed.groupCode || '');
+          }
+        } catch (e) {
+          console.error("Cache parse error", e);
+        }
+      }
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent, isRejoin: boolean = false) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
+
+    const targetCode = isRejoin ? lastSession?.groupCode : (mode === 'join' ? groupCode : undefined);
+    const targetName = isRejoin ? lastSession?.name : name;
 
     try {
       const res = await fetch('/api/groups/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
-          groupCode: mode === 'join' ? groupCode : undefined,
-          action: mode,
-          calibration: mode === 'create' ? {
-            // Estadio Tomás Adolfo Ducó (Huracán) - ESTIMATED
-            // P1: Center Field approx
+          name: targetName,
+          groupCode: targetCode,
+          action: isRejoin ? 'create' : mode, // Trick: Rejoin tries to CREATE with old ID to resurrect it
+          calibration: (mode === 'create' || isRejoin) ? {
             p1: { gps: { lat: -34.643494, lng: -58.396511 }, map: { x: 500, y: 500 } },
-            // P2: Offset
             p2: { gps: { lat: -34.644494, lng: -58.396511 }, map: { x: 500, y: 900 } },
             scale: 1
           } : undefined
@@ -114,6 +136,28 @@ export default function Home() {
               Crear Grupo
             </button>
           </div>
+
+          {/* Rejoin Session Banner */}
+          {lastSession && !loading && (
+            <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-xl relative animate-in fade-in slide-in-from-top-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Sesión Previa Detectada</span>
+                <button onClick={() => { localStorage.removeItem('venue_tracker_user'); setLastSession(null); }} className="text-xs text-gray-500 hover:text-white"><ArrowRight className="w-3 h-3 rotate-180" /></button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-bold text-sm uppercase">{lastSession.name}</p>
+                  <p className="text-brand-red font-mono text-xs">CODE: {lastSession.groupCode}</p>
+                </div>
+                <button
+                  onClick={(e) => handleSubmit(e, true)}
+                  className="bg-brand-red hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-wider"
+                >
+                  Reconectar
+                </button>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">
