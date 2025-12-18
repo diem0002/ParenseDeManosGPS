@@ -85,35 +85,49 @@ function MapContent() {
         }
     };
 
-    // Restore my bets from localStorage on mount (ONCE per group load)
-    const hasRestoredBets = useRef(false);
-
+    // Restore and sync my bets (AGGRESSIVE STRATEGY)
     useEffect(() => {
-        if (!userId || !group || hasRestoredBets.current) return;
+        if (!userId || !group) return;
+
+        const myBetsKey = `pdm_my_bets_${userId}`;
 
         try {
-            const myBetsKey = `pdm_my_bets_${userId}`;
+            // 1. Load my bets from localStorage
             const savedBets = localStorage.getItem(myBetsKey);
-            if (savedBets) {
-                const myBets = JSON.parse(savedBets);
-                console.log('Restoring my bets from localStorage:', myBets);
+            const myLocalBets = savedBets ? JSON.parse(savedBets) : [];
 
-                // Merge my saved bets into the group
+            if (myLocalBets.length > 0) {
+                console.log('📊 Syncing my bets:', myLocalBets);
+
+                // 2. Inject my local bets into the group state
                 setGroup(prev => {
                     if (!prev) return null;
                     const serverBets = prev.bets || [];
-                    // Remove any old bets from me in server data
+                    // Remove my old bets from server
                     const othersBets = serverBets.filter(b => b.userId !== userId);
-                    // Combine with my local bets
-                    return { ...prev, bets: [...othersBets, ...myBets] };
+                    // Add my fresh local bets
+                    return { ...prev, bets: [...othersBets, ...myLocalBets] };
                 });
 
-                hasRestoredBets.current = true;
+                // 3. Upload each bet to server (fire and forget)
+                myLocalBets.forEach((bet: any) => {
+                    fetch('/api/bets', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            groupId: groupCode,
+                            userId: bet.userId,
+                            userName: bet.userName,
+                            fightId: bet.fightId,
+                            prediction: bet.prediction
+                        })
+                    }).catch(e => console.warn('Bet upload failed:', e));
+                });
             }
         } catch (e) {
-            console.error('Failed to restore bets', e);
+            console.error('Failed to sync bets', e);
         }
-    }, [userId, group]); // Run when group becomes available
+    }, [userId, group?.id, groupCode]); // Re-sync when group changes
 
     // Validate session
     useEffect(() => {
