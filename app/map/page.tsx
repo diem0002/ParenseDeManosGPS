@@ -50,11 +50,24 @@ function MapContent() {
         if (msg === 'GROUP_NOT_FOUND') {
             // Attempt auto-resurrection
             console.log('Group lost, attempting resurrection...');
+
+            // Try to recover name from local storage if not in memory
+            let recoverName = currentUser?.name || 'User';
+            if (typeof window !== 'undefined' && !currentUser?.name) {
+                try {
+                    const cached = localStorage.getItem('venue_tracker_user');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (parsed.name) recoverName = parsed.name;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
             fetch('/api/groups/join', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: currentUser?.name || 'User', // Fallback name
+                    name: recoverName,
                     groupCode: groupCode,
                     action: 'create', // Explicitly recreate
                     calibration: { // Re-send default calibration
@@ -262,7 +275,9 @@ function MapContent() {
                                     <div className="flex items-center">
                                         <div className={clsx("w-3 h-3 rounded-full mr-4 shadow-[0_0_8px_currentColor]", member.isOnline ? "bg-green-500 text-green-500" : "bg-gray-600 text-gray-600")} />
                                         <div>
-                                            <p className="font-bold text-white text-lg">{member.name}</p>
+                                            <p className="font-bold text-white text-lg">
+                                                {member.name} {member.name === 'User' && <span className="text-gray-500 text-xs">(Usuario)</span>}
+                                            </p>
                                             <p className="text-xs text-gray-400 font-mono tracking-wide">{member.isOnline ? 'EN LÍNEA' : 'OFFLINE'}</p>
                                         </div>
                                     </div>

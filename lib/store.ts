@@ -109,8 +109,8 @@ class InMemoryStore {
             .map(id => this.users.get(id))
             .filter((u): u is User => u !== undefined)
             .map(u => {
-                // Mark offline if no update in 30 seconds
-                if (now - (u.lastUpdated || 0) > 30000) {
+                // Mark offline if no update in 120 seconds (2 minutes)
+                if (now - (u.lastUpdated || 0) > 120000) {
                     u.isOnline = false;
                 }
                 return u;
