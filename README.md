@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Venue Tracker PWA
 
-## Getting Started
+Aplicación web progresiva (PWA) Para localización en tiempo real en eventos, utilizando mapas personalizados y coordenadas proyectadas.
 
-First, run the development server:
+## Requisitos Previos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+
+- NPM
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Instalación
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1.  Clonar el repositorio.
+2.  Instalar dependencias:
+    ```bash
+    npm install
+    ```
+3.  Ejecutar servidor de desarrollo:
+    ```bash
+    npm run dev
+    ```
+4.  Abrir [http://localhost:3000](http://localhost:3000).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Funcionalidades Principales
 
-## Learn More
+-   **Grupos y Usuarios**: Unirse o crear grupos mediante código único.
+-   **Localización en Tiempo Real**: Tracking GPS proyectado sobre un plano SVG/Imagen.
+-   **Mapa Personalizado**: Sistema de proyección de coordenads lat/lng a x/y pixels. calibrable.
+-   **Distancias**: Cálculo de distancia haversine entre participantes.
+-   **Offline/Online**: Indicadores de estado de conectividad de los usuarios.
 
-To learn more about Next.js, take a look at the following resources:
+## Despliegue en Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1.  Instalar Vercel CLI o conectar repo a Vercel Dashboard.
+2.  Configurar variables de entorno (ninguna requerida para la version básica en memoria).
+3.  Deployar:
+    ```bash
+    vercel --prod
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> **NOTA**: Esta aplicación usa un almacenamiento en memoria (`globalThis`). Los datos se perderán al reiniciar la instancia (nuevo deploy o inactividad). Para producción, conectar a Redis/Vercel KV reemplazando `lib/store.ts`.
 
-## Deploy on Vercel
+## Estructura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+-   `app/`: Páginas y API Routes (Next.js App Router).
+-   `components/`: Componentes React (`VenueMap`, `LocationManager`).
+-   `lib/`: Lógica de negocio (`store.ts`, `geometry.ts`, `types.ts`).
+-   `public/`: Assets estáticos.
