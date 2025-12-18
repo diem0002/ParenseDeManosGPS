@@ -35,9 +35,9 @@ export default function Home() {
     }
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, isRejoin: boolean = false) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() && !isRejoin) return;
 
     setLoading(true);
     setError('');
@@ -53,14 +53,17 @@ export default function Home() {
         console.log('🆔 Using existing persistent userId:', persistentUserId);
       }
 
+      const targetName = isRejoin ? lastSession?.name : name;
+      const targetCode = isRejoin ? lastSession?.groupCode : (groupCode || undefined);
+
       // Join or create group
       const res = await fetch('/api/groups/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
-          groupCode: groupCode || undefined,
-          action: groupCode ? 'join' : 'create',
+          name: targetName,
+          groupCode: targetCode,
+          action: targetCode ? 'join' : 'create',
           calibration: {
             p1: { gps: { lat: -34.643494, lng: -58.396511 }, map: { x: 500, y: 500 } },
             p2: { gps: { lat: -34.644494, lng: -58.396511 }, map: { x: 500, y: 900 } },
@@ -78,7 +81,7 @@ export default function Home() {
 
       // Save session to localStorage for recovery
       localStorage.setItem('venue_tracker_user', JSON.stringify({
-        name,
+        name: targetName,
         userId: persistentUserId,
         groupCode: data.group.id
       }));
