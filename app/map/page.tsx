@@ -42,7 +42,39 @@ function MapContent() {
     }, [groupCode, userId, router]);
 
     const handleGroupUpdate = useCallback((updatedGroup: Group, updatedMembers: User[]) => {
-        setGroup(updatedGroup);
+        setGroup(prevGroup => {
+            if (!prevGroup) return updatedGroup;
+
+            // Merge messages to preserve optimistic ones ("temp-") until confirmed
+            const serverMessages = updatedGroup.messages || [];
+            const localMessages = prevGroup.messages || [];
+
+            const pendingMessages = localMessages.filter(m => m.id.startsWith('temp-'));
+
+            const mergedMessages = [...serverMessages];
+
+            pendingMessages.forEach(tempMsg => {
+                // Check if this temp message presumably arrived from server
+                // (Match by sender + text + approximate timestamp)
+                const isConfirmed = serverMessages.some(serverMsg =>
+                    serverMsg.senderId === tempMsg.senderId &&
+                    serverMsg.text === tempMsg.text &&
+                    Math.abs(serverMsg.timestamp - tempMsg.timestamp) < 10000 // 10s window
+                );
+
+                if (!isConfirmed) {
+                    mergedMessages.push(tempMsg);
+                }
+            });
+
+            // Sort by timestamp just in case
+            mergedMessages.sort((a, b) => a.timestamp - b.timestamp);
+
+            return {
+                ...updatedGroup,
+                messages: mergedMessages
+            };
+        });
         setMembers(updatedMembers);
     }, []);
 

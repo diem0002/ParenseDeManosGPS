@@ -87,9 +87,9 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             }
         };
 
-        // Poll every 2 seconds
+        // Poll every 1 second for snappier chat
         poll(); // Initial call
-        pollTimer.current = setInterval(poll, 2000);
+        pollTimer.current = setInterval(poll, 1000);
 
         return () => {
             if (pollTimer.current) clearInterval(pollTimer.current);
