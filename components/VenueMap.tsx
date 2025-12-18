@@ -37,7 +37,6 @@ export const VenueMap: React.FC<VenueMapProps> = ({
     }
 
     return (
-    return (
         <div className="w-full h-full bg-black/20 overflow-hidden relative">
             <TransformWrapper
                 initialScale={1}
@@ -90,6 +89,5 @@ export const VenueMap: React.FC<VenueMapProps> = ({
                 <div className="border-2 border-current w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs">N</div>
             </div>
         </div>
-    );
     );
 };
