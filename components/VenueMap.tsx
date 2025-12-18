@@ -33,17 +33,23 @@ export const VenueMap: React.FC<VenueMapProps> = ({
     }, [users, calibration]);
 
     if (!calibration) {
-        return <div className="text-white p-4">Waiting for calibration...</div>;
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-black/80 text-white animate-pulse">
+                <p className="text-xl font-bold uppercase tracking-widest text-brand-red">Cargando Mapa...</p>
+                <p className="text-xs text-gray-500 mt-2">Sincronizando satélites...</p>
+            </div>
+        );
     }
 
     return (
         <div className="w-full h-full bg-black/20 overflow-hidden relative">
             <TransformWrapper
                 initialScale={1}
-                minScale={0.2}
-                maxScale={8}
-                centerOnInit
-                limitToBounds={false}
+                minScale={0.5}
+                maxScale={4}
+                centerOnInit={true}
+                limitToBounds={true}
+                alignmentAnimation={{ sizeX: 0, sizeY: 0 }}
             >
                 <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
                     <div className="relative shadow-2xl" style={{ width: '1000px', height: '1000px' }}>
