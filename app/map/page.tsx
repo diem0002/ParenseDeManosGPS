@@ -6,7 +6,7 @@ import { Group, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/geometry';
 import { VenueMap } from '@/components/VenueMap';
 import { LocationManager } from '@/components/LocationManager';
-import { Users, Navigation, AlertTriangle, Calendar, X, MessageSquare, Map as MapIcon, Send } from 'lucide-react';
+import { Users, Navigation, AlertTriangle, Calendar, X, MessageSquare, Map as MapIcon, Send, ChevronLeft } from 'lucide-react';
 import Image from 'next/image';
 import clsx from 'clsx';
 
@@ -98,7 +98,7 @@ function MapContent() {
     const messages = group?.messages || [];
 
     return (
-        <div className="flex-1 relative flex flex-col md:flex-row overflow-hidden h-full bg-black">
+        <div className="flex-1 relative flex flex-col md:flex-row overflow-hidden h-[100dvh] bg-black">
 
             {/* Background Overlay */}
             <div className="absolute inset-0 bg-[url('/hero-bg.png')] opacity-10 bg-cover bg-center pointer-events-none z-0 mix-blend-overlay" />
@@ -164,7 +164,7 @@ function MapContent() {
             {/* Main Content Area (Mobile: Full Screen with Overlays / Desktop: Map) */}
             <div className="flex-1 relative flex flex-col overflow-hidden z-10 w-full h-full">
 
-                {/* Mobile Header (Only visible on mobile) */}
+                {/* Mobile Header (Only visible on mobile when map is active) */}
                 <header className="md:hidden flex-none p-3 bg-black/90 backdrop-blur-md border-b border-white/10 flex justify-between items-center z-50">
                     <div className="flex items-center space-x-2">
                         <Image src="/logo.png" alt="Logo" width={30} height={30} />
@@ -192,12 +192,8 @@ function MapContent() {
                     </div>
                 )}
 
-                {/* Map Layer - Always rendered but z-index changes based on active tab in mobile */}
-                <div className={clsx(
-                    "absolute inset-0 w-full h-full transition-opacity duration-300",
-                    // On mobile, if chat/members are open, fade map slightly or keep it visible
-                    // We'll keep it fully visible as background for now.
-                )}>
+                {/* Map Layer */}
+                <div className="absolute inset-0 w-full h-full">
                     <VenueMap
                         mapImage={group?.mapImage || ""}
                         users={members}
@@ -210,7 +206,6 @@ function MapContent() {
                         <button
                             onClick={() => {
                                 if (currentUser && currentUser.lastLocation) {
-                                    // Teleport slightly to move
                                     fetch('/api/location', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
@@ -225,93 +220,114 @@ function MapContent() {
                     </div>
                 </div>
 
-                {/* MOBILE OVERLAYS: Chat & Members */}
+                {/* MOBILE FULL SCREEN OVERLAYS (Z-60 to sit on top of everything) */}
 
-                {/* Chat Overlay (Mobile) */}
-                <div className={clsx(
-                    "md:hidden absolute inset-0 bg-black/95 z-40 flex flex-col transition-transform duration-300 transform pt-16 pb-20",
-                    activeTab === 'chat' ? "translate-y-0" : "translate-y-full"
-                )}>
-                    {/* Chat Header with Close Button */}
-                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/50">
-                        <h2 className="text-lg font-bold text-white uppercase italic">Chat de Grupo</h2>
-                        <button onClick={() => setActiveTab('map')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
-                            <X className="w-5 h-5 text-white" />
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {messages.length === 0 && <p className="text-center text-gray-600 text-sm mt-10">Sé el primero en hablar...</p>}
-                        {messages.map((msg, idx) => (
-                            <div key={msg.id || idx} className={clsx("flex flex-col max-w-[85%]", msg.senderId === userId ? "self-end items-end" : "self-start items-start")}>
-                                <span className="text-[10px] text-gray-500 mb-1">{msg.senderName}</span>
-                                <div className={clsx("px-4 py-2 rounded-2xl text-sm break-words", msg.senderId === userId ? "bg-brand-red text-white rounded-br-none" : "bg-gray-800 text-white rounded-bl-none")}>
-                                    {msg.text}
-                                </div>
+                {/* Chat Modal */}
+                {activeTab === 'chat' && (
+                    <div className="md:hidden fixed inset-0 z-[100] bg-black flex flex-col h-[100dvh]">
+                        {/* Header */}
+                        <div className="flex-none p-4 border-b border-white/10 flex justify-between items-center bg-zinc-900 pb-safe-top pt-safe-top">
+                            <div className="flex items-center gap-2">
+                                <MessageSquare className="w-5 h-5 text-brand-red" />
+                                <h2 className="text-lg font-bold text-white uppercase italic">Chat</h2>
                             </div>
-                        ))}
-                        <div ref={chatEndRef} />
-                    </div>
-                    <form onSubmit={sendMessage} className="p-4 border-t border-white/10 flex gap-2 bg-black">
-                        <input
-                            value={chatMessage}
-                            onChange={e => setChatMessage(e.target.value)}
-                            className="flex-1 bg-white/10 rounded-full px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-brand-red"
-                            placeholder="Mensaje..."
-                        />
-                        <button type="submit" className="bg-brand-red p-3 rounded-full text-white shadow-lg shadow-brand-red/30">
-                            <Send className="w-5 h-5" />
-                        </button>
-                    </form>
-                </div>
+                            <button
+                                onClick={() => setActiveTab('map')}
+                                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full text-white active:scale-90 transition-transform"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
 
-                {/* Members Overlay (Mobile) */}
-                <div className={clsx(
-                    "md:hidden absolute inset-0 bg-black/95 z-40 flex flex-col transition-transform duration-300 transform pt-16 pb-20",
-                    activeTab === 'members' ? "translate-y-0" : "translate-y-full"
-                )}>
-                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/50">
-                        <h2 className="text-lg font-bold text-white uppercase italic">Miembros ({members.length})</h2>
-                        <button onClick={() => setActiveTab('map')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
-                            <X className="w-5 h-5 text-white" />
-                        </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {members.map(member => (
-                            <div key={member.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                                <div className="flex items-center">
-                                    <div className={clsx("w-3 h-3 rounded-full mr-3 shadow-[0_0_8px_currentColor]", member.isOnline ? "bg-green-500 text-green-500" : "bg-gray-600 text-gray-600")} />
-                                    <div>
-                                        <p className="font-bold text-white">{member.name}</p>
-                                        <p className="text-xs text-gray-500">{member.isOnline ? 'ONLINE' : 'OFFLINE'}</p>
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black">
+                            {messages.length === 0 && (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50">
+                                    <MessageSquare className="w-12 h-12 mb-2" />
+                                    <p className="text-sm">Sin mensajes aún</p>
+                                </div>
+                            )}
+                            {messages.map((msg, idx) => (
+                                <div key={msg.id || idx} className={clsx("flex flex-col max-w-[85%]", msg.senderId === userId ? "self-end items-end" : "self-start items-start")}>
+                                    <span className="text-[10px] text-gray-500 mb-1">{msg.senderName}</span>
+                                    <div className={clsx("px-4 py-2 rounded-2xl text-sm break-words shadow-sm", msg.senderId === userId ? "bg-brand-red text-white rounded-br-none" : "bg-zinc-800 text-white rounded-bl-none")}>
+                                        {msg.text}
                                     </div>
                                 </div>
-                                {member.id !== userId && currentUser?.lastLocation && member.lastLocation && (
-                                    <div className="text-brand-red font-bold text-sm bg-brand-red/10 px-2 py-1 rounded">
-                                        <Navigation className="w-3 h-3 inline mr-1" />
-                                        {(() => {
-                                            const d = haversineDistance(currentUser.lastLocation!, member.lastLocation!);
-                                            return d < 20 ? 'Cerca' : `${d.toFixed(0)}m`;
-                                        })()}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                            ))}
+                            <div ref={chatEndRef} />
+                        </div>
 
-                {/* Mobile Bottom Navigation Bar */}
+                        {/* Input Area */}
+                        <form onSubmit={sendMessage} className="flex-none p-3 border-t border-white/10 flex gap-2 bg-zinc-900 pb-safe-bottom">
+                            <input
+                                value={chatMessage}
+                                onChange={e => setChatMessage(e.target.value)}
+                                className="flex-1 bg-black rounded-full px-5 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-red border border-white/10"
+                                placeholder="Escribe un mensaje..."
+                                autoFocus
+                            />
+                            <button type="submit" className="bg-brand-red w-12 h-12 flex items-center justify-center rounded-full text-white shadow-lg shadow-brand-red/30 active:scale-95 transition-transform">
+                                <Send className="w-5 h-5 ml-0.5" />
+                            </button>
+                        </form>
+                    </div>
+                )}
+
+                {/* Members Modal */}
+                {activeTab === 'members' && (
+                    <div className="md:hidden fixed inset-0 z-[100] bg-black flex flex-col h-[100dvh]">
+                        <div className="flex-none p-4 border-b border-white/10 flex justify-between items-center bg-zinc-900 pb-safe-top pt-safe-top">
+                            <div className="flex items-center gap-2">
+                                <Users className="w-5 h-5 text-brand-red" />
+                                <h2 className="text-lg font-bold text-white uppercase italic">Miembros</h2>
+                            </div>
+                            <button
+                                onClick={() => setActiveTab('map')}
+                                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full text-white active:scale-90 transition-transform"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-black pb-safe-bottom">
+                            {members.map(member => (
+                                <div key={member.id} className="flex items-center justify-between p-4 bg-zinc-900 rounded-xl border border-white/5 shadow-sm">
+                                    <div className="flex items-center">
+                                        <div className={clsx("w-3 h-3 rounded-full mr-4 shadow-[0_0_8px_currentColor]", member.isOnline ? "bg-green-500 text-green-500" : "bg-gray-600 text-gray-600")} />
+                                        <div>
+                                            <p className="font-bold text-white text-lg">{member.name}</p>
+                                            <p className="text-xs text-gray-400 font-mono tracking-wide">{member.isOnline ? 'EN LÍNEA' : 'OFFLINE'}</p>
+                                        </div>
+                                    </div>
+                                    {member.id !== userId && currentUser?.lastLocation && member.lastLocation && (
+                                        <div className="flex flex-col items-end">
+                                            <div className="text-brand-red font-bold text-sm bg-brand-red/10 px-3 py-1 rounded-lg flex items-center">
+                                                <Navigation className="w-3 h-3 inline mr-1.5" />
+                                                {(() => {
+                                                    const d = haversineDistance(currentUser.lastLocation!, member.lastLocation!);
+                                                    return d < 20 ? 'Cerca' : `${d.toFixed(0)}m`;
+                                                })()}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Mobile Bottom Navigation Bar (Visible only when no overlay is active, or functionally covered by overlay) */}
                 <div className="md:hidden absolute bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 pb-safe pt-2 px-6 flex justify-between items-center z-50 h-20">
                     <button
                         onClick={() => setActiveTab('map')}
-                        className={clsx("flex flex-col items-center gap-1 transition-colors", activeTab === 'map' ? "text-brand-red" : "text-gray-500")}
+                        className={clsx("flex flex-col items-center gap-1 transition-colors", activeTab === 'map' ? "text-brand-red scale-110" : "text-gray-500")}
                     >
                         <MapIcon className={clsx("w-6 h-6", activeTab === 'map' && "drop-shadow-[0_0_8px_rgba(213,0,0,0.5)]")} />
                         <span className="text-[10px] font-bold uppercase">Mapa</span>
                     </button>
 
                     <button
-                        onClick={() => setActiveTab(activeTab === 'members' ? 'map' : 'members')}
+                        onClick={() => setActiveTab('members')}
                         className={clsx("flex flex-col items-center gap-1 transition-colors", activeTab === 'members' ? "text-brand-red" : "text-gray-500")}
                     >
                         <Users className="w-6 h-6" />
@@ -319,14 +335,14 @@ function MapContent() {
                     </button>
 
                     <button
-                        onClick={() => setActiveTab(activeTab === 'chat' ? 'map' : 'chat')}
+                        onClick={() => setActiveTab('chat')}
                         className={clsx("flex flex-col items-center gap-1 transition-colors relative", activeTab === 'chat' ? "text-brand-red" : "text-gray-500")}
                     >
                         <MessageSquare className="w-6 h-6" />
                         <span className="text-[10px] font-bold uppercase">Chat</span>
                         {/* Unread dot simulation */}
                         {messages.length > 0 && activeTab !== 'chat' && (
-                            <span className="absolute top-0 right-2 w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
+                            <span className="absolute top-0 right-2 w-2.5 h-2.5 bg-white rounded-full animate-pulse shadow-[0_0_5px_white]" />
                         )}
                     </button>
                 </div>
