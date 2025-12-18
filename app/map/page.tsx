@@ -24,6 +24,7 @@ function MapContent() {
     const [members, setMembers] = useState<User[]>([]);
     const [error, setError] = useState('');
     const [showItinerary, setShowItinerary] = useState(false);
+    const [isTyping, setIsTyping] = useState(false); // Track keyboard state
 
     const currentUser = members.find(u => u.id === userId);
 
@@ -236,13 +237,14 @@ function MapContent() {
                         </div>
 
                         {/* Input sticky at bottom of main area */}
-                        <form onSubmit={sendMessage} className="flex-none p-3 border-t border-white/10 flex gap-2 bg-zinc-900 shadow-xl z-30">
+                        <form onSubmit={sendMessage} className="flex-none p-3 border-t border-white/10 flex gap-2 bg-zinc-900 shadow-xl z-30 pb-safe">
                             <input
                                 value={chatMessage}
                                 onChange={e => setChatMessage(e.target.value)}
                                 className="flex-1 bg-black rounded-full px-5 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-red border border-white/10"
                                 placeholder="Escribe un mensaje..."
-                                autoFocus
+                                onFocus={() => setIsTyping(true)}
+                                onBlur={() => setTimeout(() => setIsTyping(false), 100)} // Delay to allow button click
                             />
                             <button type="submit" className="bg-brand-red w-12 h-12 flex items-center justify-center rounded-full text-white shadow-lg shadow-brand-red/30 active:scale-95 transition-transform">
                                 <Send className="w-5 h-5 ml-0.5" />
@@ -283,40 +285,42 @@ function MapContent() {
 
             </main>
 
-            {/* NAV BAR FIJA (Siempre visible abajo) */}
-            <nav className="flex-none h-20 bg-black/95 border-t border-white/10 flex justify-around items-center px-2 pb-safe z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
-                <button
-                    onClick={() => setActiveTab('map')}
-                    className={clsx("flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 w-1/3 active:scale-95", activeTab === 'map' ? "text-brand-red" : "text-gray-500")}
-                >
-                    <MapIcon className={clsx("w-6 h-6", activeTab === 'map' && "drop-shadow-[0_0_8px_rgba(213,0,0,0.6)]")} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Mapa</span>
-                    {activeTab === 'map' && <div className="h-1 w-1 bg-brand-red rounded-full mt-1" />}
-                </button>
+            {/* NAV BAR FIJA (Siempre visible abajo, EXCEPTO al escribir) */}
+            {!isTyping && (
+                <nav className="flex-none h-20 bg-black/95 border-t border-white/10 flex justify-around items-center px-2 pb-safe z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+                    <button
+                        onClick={() => setActiveTab('map')}
+                        className={clsx("flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 w-1/3 active:scale-95", activeTab === 'map' ? "text-brand-red" : "text-gray-500")}
+                    >
+                        <MapIcon className={clsx("w-6 h-6", activeTab === 'map' && "drop-shadow-[0_0_8px_rgba(213,0,0,0.6)]")} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Mapa</span>
+                        {activeTab === 'map' && <div className="h-1 w-1 bg-brand-red rounded-full mt-1" />}
+                    </button>
 
-                <button
-                    onClick={() => setActiveTab('members')}
-                    className={clsx("flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 w-1/3 active:scale-95", activeTab === 'members' ? "text-brand-red" : "text-gray-500")}
-                >
-                    <Users className="w-6 h-6" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Gente</span>
-                    {activeTab === 'members' && <div className="h-1 w-1 bg-brand-red rounded-full mt-1" />}
-                </button>
+                    <button
+                        onClick={() => setActiveTab('members')}
+                        className={clsx("flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 w-1/3 active:scale-95", activeTab === 'members' ? "text-brand-red" : "text-gray-500")}
+                    >
+                        <Users className="w-6 h-6" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Gente</span>
+                        {activeTab === 'members' && <div className="h-1 w-1 bg-brand-red rounded-full mt-1" />}
+                    </button>
 
-                <button
-                    onClick={() => setActiveTab('chat')}
-                    className={clsx("flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 w-1/3 active:scale-95 relative", activeTab === 'chat' ? "text-brand-red" : "text-gray-500")}
-                >
-                    <MessageSquare className="w-6 h-6" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Chat</span>
-                    {activeTab === 'chat' && <div className="h-1 w-1 bg-brand-red rounded-full mt-1" />}
+                    <button
+                        onClick={() => setActiveTab('chat')}
+                        className={clsx("flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 w-1/3 active:scale-95 relative", activeTab === 'chat' ? "text-brand-red" : "text-gray-500")}
+                    >
+                        <MessageSquare className="w-6 h-6" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Chat</span>
+                        {activeTab === 'chat' && <div className="h-1 w-1 bg-brand-red rounded-full mt-1" />}
 
-                    {/* Unread Indicator */}
-                    {messages.length > 0 && activeTab !== 'chat' && (
-                        <span className="absolute top-2 right-8 w-2.5 h-2.5 bg-white rounded-full animate-pulse shadow-[0_0_5px_white]" />
-                    )}
-                </button>
-            </nav>
+                        {/* Unread Indicator */}
+                        {messages.length > 0 && activeTab !== 'chat' && (
+                            <span className="absolute top-2 right-8 w-2.5 h-2.5 bg-white rounded-full animate-pulse shadow-[0_0_5px_white]" />
+                        )}
+                    </button>
+                </nav>
+            )}
 
             {/* Itinerary Modal (Global) - Z-INDEX 100 ABOVE EVERYTHING */}
             {showItinerary && (

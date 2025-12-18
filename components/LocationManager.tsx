@@ -45,12 +45,19 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             },
             (error) => {
                 console.error('Geolocation error', error);
-                onError(`GPS Error: ${error.message}`);
+                if (error.code === 1) { // PERMISSION_DENIED
+                    onError(`GPS DENEGADO: Permite el acceso.`);
+                } else if (error.code === 2) { // POSITION_UNAVAILABLE
+                    onError(`SEÑAL DÉBIL: Buscando GPS...`);
+                } else if (error.code === 3) { // TIMEOUT
+                    // Silent retry for timeout, don't block UI with red banner directly
+                    console.log('GPS Timeout, retrying...');
+                }
             },
             {
                 enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0,
+                timeout: 30000, // 30s timeout to avoid flaky "timeout expired" on mobile
+                maximumAge: 5000, // Accept cached position up to 5s old
             }
         );
 
