@@ -86,8 +86,8 @@ function MapContent() {
         }
     };
 
-    // Restore and sync my bets (AGGRESSIVE STRATEGY + SERVER RESTART PROTECTION)
-    const lastBetsCountRef = useRef(0);
+    // Restore and sync my bets (OPTIMIZED - only once per group)
+    const lastSyncedGroupId = useRef<string | null>(null);
 
     useEffect(() => {
         if (!userId || !group) {
@@ -95,10 +95,14 @@ function MapContent() {
             return;
         }
 
-        const myBetsKey = `pdm_my_bets_${userId}`;
-        const currentBetsCount = (group.bets || []).length;
+        // Only sync once per group
+        if (lastSyncedGroupId.current === group.id) {
+            return;
+        }
 
-        console.log('🔄 Bet sync triggered - userId:', userId, 'groupId:', group.id, 'currentBetsCount:', currentBetsCount);
+        const myBetsKey = `pdm_my_bets_${userId}`;
+
+        console.log('🔄 Bet sync triggered - userId:', userId, 'groupId:', group.id);
 
         try {
             // 1. Load my bets from localStorage
@@ -107,14 +111,11 @@ function MapContent() {
 
             console.log('📂 Loaded from localStorage:', myBetsKey, myLocalBets);
 
-            // 2. Detect server restart: if bets suddenly disappeared
-            const serverRestarted = lastBetsCountRef.current > 0 && currentBetsCount === 0;
-
-            // 3. Always restore if we have local bets and server has none OR server restarted
+            // 2. Restore if we have local bets
             if (myLocalBets.length > 0) {
-                console.log('📊 Syncing my bets (serverRestarted:', serverRestarted, '):', myLocalBets);
+                console.log('📊 Syncing my bets:', myLocalBets);
 
-                // 4. Inject my local bets into the group state IMMEDIATELY
+                // 3. Inject my local bets into the group state IMMEDIATELY
                 setGroup(prev => {
                     if (!prev) return null;
                     const serverBets = prev.bets || [];
@@ -126,7 +127,7 @@ function MapContent() {
                     return { ...prev, bets: merged };
                 });
 
-                // 5. Upload each bet to server (fire and forget)
+                // 4. Upload each bet to server (fire and forget)
                 myLocalBets.forEach((bet: any) => {
                     fetch('/api/bets', {
                         method: 'POST',
@@ -144,11 +145,11 @@ function MapContent() {
                 console.log('ℹ️ No local bets to restore');
             }
 
-            lastBetsCountRef.current = currentBetsCount;
+            lastSyncedGroupId.current = group.id;
         } catch (e) {
             console.error('❌ Failed to sync bets', e);
         }
-    }, [userId, group?.id, groupCode]); // Trigger when group ID changes (new room)
+    }, [userId, group?.id, groupCode]); // Only trigger when group ID changes
 
     // Validate session
     useEffect(() => {
