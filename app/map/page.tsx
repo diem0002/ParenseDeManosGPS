@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Group, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/geometry';
@@ -31,10 +31,14 @@ function MapContent() {
         }
     }, [groupCode, userId, router]);
 
-    const handleGroupUpdate = (updatedGroup: Group, updatedMembers: User[]) => {
+    const handleGroupUpdate = useCallback((updatedGroup: Group, updatedMembers: User[]) => {
         setGroup(updatedGroup);
         setMembers(updatedMembers);
-    };
+    }, []);
+
+    const handleError = useCallback((msg: string) => {
+        setError(msg);
+    }, []);
 
     const currentUser = members.find(u => u.id === userId);
 
@@ -88,7 +92,7 @@ function MapContent() {
                             userId={userId}
                             groupCode={groupCode}
                             onGroupUpdate={handleGroupUpdate}
-                            onError={(msg) => setError(msg)}
+                            onError={handleError}
                         />
 
                         {error && (

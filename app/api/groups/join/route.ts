@@ -9,7 +9,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
         }
 
-        let groupId = groupCode;
+        let groupId = groupCode?.trim().toUpperCase();
         let group;
 
         if (action === 'create') {
