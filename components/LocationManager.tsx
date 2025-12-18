@@ -19,7 +19,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
     const pollTimer = useRef<NodeJS.Timeout | null>(null);
     const watchId = useRef<number | null>(null);
 
-    // 1. Setup Geolocation Watcher
+    // 1. Setup Geolocation Watcher (STABLE - never restart)
     useEffect(() => {
         if (!navigator.geolocation) {
             onError('Geolocation is not supported by your browser');
@@ -48,7 +48,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 if (error.code === 1) { // PERMISSION_DENIED
                     onError(`GPS DENEGADO: Permite el acceso.`);
                 } else if (error.code === 2) { // POSITION_UNAVAILABLE
-                    onError(`SEÑAL DÉBIL: Buscando GPS...`);
+                    console.warn('SEÑAL DÉBIL: Buscando GPS...');
                 } else if (error.code === 3) { // TIMEOUT
                     // Silent retry for timeout, don't block UI with red banner directly
                     console.log('GPS Timeout, retrying...');
@@ -64,7 +64,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
         return () => {
             if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
         };
-    }, [userId, onError]);
+    }, []); // EMPTY DEPS - Start once and never restart
 
     // 2. Setup Polling for Group Members
     useEffect(() => {
