@@ -226,13 +226,20 @@ function MapContent() {
                 </div>
 
                 {/* MOBILE OVERLAYS: Chat & Members */}
-                {/* Only visible on mobile when activeTab is set */}
 
                 {/* Chat Overlay (Mobile) */}
                 <div className={clsx(
                     "md:hidden absolute inset-0 bg-black/95 z-40 flex flex-col transition-transform duration-300 transform pt-16 pb-20",
                     activeTab === 'chat' ? "translate-y-0" : "translate-y-full"
                 )}>
+                    {/* Chat Header with Close Button */}
+                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/50">
+                        <h2 className="text-lg font-bold text-white uppercase italic">Chat de Grupo</h2>
+                        <button onClick={() => setActiveTab('map')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                            <X className="w-5 h-5 text-white" />
+                        </button>
+                    </div>
+
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {messages.length === 0 && <p className="text-center text-gray-600 text-sm mt-10">Sé el primero en hablar...</p>}
                         {messages.map((msg, idx) => (
@@ -263,8 +270,11 @@ function MapContent() {
                     "md:hidden absolute inset-0 bg-black/95 z-40 flex flex-col transition-transform duration-300 transform pt-16 pb-20",
                     activeTab === 'members' ? "translate-y-0" : "translate-y-full"
                 )}>
-                    <div className="p-4 border-b border-white/10 flex justify-between items-center">
+                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/50">
                         <h2 className="text-lg font-bold text-white uppercase italic">Miembros ({members.length})</h2>
+                        <button onClick={() => setActiveTab('map')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                            <X className="w-5 h-5 text-white" />
+                        </button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {members.map(member => (
@@ -301,7 +311,7 @@ function MapContent() {
                     </button>
 
                     <button
-                        onClick={() => setActiveTab('members')}
+                        onClick={() => setActiveTab(activeTab === 'members' ? 'map' : 'members')}
                         className={clsx("flex flex-col items-center gap-1 transition-colors", activeTab === 'members' ? "text-brand-red" : "text-gray-500")}
                     >
                         <Users className="w-6 h-6" />
@@ -309,7 +319,7 @@ function MapContent() {
                     </button>
 
                     <button
-                        onClick={() => setActiveTab('chat')}
+                        onClick={() => setActiveTab(activeTab === 'chat' ? 'map' : 'chat')}
                         className={clsx("flex flex-col items-center gap-1 transition-colors relative", activeTab === 'chat' ? "text-brand-red" : "text-gray-500")}
                     >
                         <MessageSquare className="w-6 h-6" />
