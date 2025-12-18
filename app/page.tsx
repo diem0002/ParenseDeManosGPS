@@ -27,8 +27,11 @@ export default function Home() {
           groupCode: mode === 'join' ? groupCode : undefined,
           action: mode,
           calibration: mode === 'create' ? {
-            p1: { gps: { lat: -34.603722, lng: -58.381592 }, map: { x: 100, y: 100 } },
-            p2: { gps: { lat: -34.604722, lng: -58.382592 }, map: { x: 500, y: 500 } },
+            // Estadio Tomás Adolfo Ducó (Huracán) - ESTIMATED
+            // P1: Center Field approx
+            p1: { gps: { lat: -34.643494, lng: -58.396511 }, map: { x: 500, y: 500 } },
+            // P2: Offset
+            p2: { gps: { lat: -34.644494, lng: -58.396511 }, map: { x: 500, y: 900 } },
             scale: 1
           } : undefined
         }),
@@ -95,8 +98,8 @@ export default function Home() {
             <button
               onClick={() => setMode('join')}
               className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${mode === 'join'
-                  ? 'bg-brand-red text-white shadow-[0_0_20px_rgba(213,0,0,0.4)]'
-                  : 'text-gray-500 hover:text-white hover:bg-white/5'
+                ? 'bg-brand-red text-white shadow-[0_0_20px_rgba(213,0,0,0.4)]'
+                : 'text-gray-500 hover:text-white hover:bg-white/5'
                 }`}
             >
               Unirse
@@ -104,8 +107,8 @@ export default function Home() {
             <button
               onClick={() => setMode('create')}
               className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${mode === 'create'
-                  ? 'bg-brand-red text-white shadow-[0_0_20px_rgba(213,0,0,0.4)]'
-                  : 'text-gray-500 hover:text-white hover:bg-white/5'
+                ? 'bg-brand-red text-white shadow-[0_0_20px_rgba(213,0,0,0.4)]'
+                : 'text-gray-500 hover:text-white hover:bg-white/5'
                 }`}
             >
               Crear Grupo

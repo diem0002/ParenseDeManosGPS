@@ -20,7 +20,8 @@ class InMemoryStore {
             name,
             members: [],
             createdAt: Date.now(),
-            calibration
+            calibration,
+            mapImage: '/venue-map.png' // Default map for new groups
         };
         this.groups.set(id, group);
         return group;
