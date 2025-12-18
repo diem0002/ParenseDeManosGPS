@@ -27,7 +27,8 @@ class InMemoryStore {
             createdAt: Date.now(),
             calibration,
             mapImage: '/venue-map.png',
-            messages: []
+            messages: [],
+            bets: []
         };
         this.groups.set(id, group);
         return group;
@@ -97,6 +98,26 @@ class InMemoryStore {
             group.messages.shift();
         }
         return message;
+    }
+
+    addBet(groupId: string, userId: string, userName: string, fightId: string, prediction: 'A' | 'B') {
+        const group = this.groups.get(groupId);
+        if (!group) return;
+
+        // Remove previous bet for this fight/user if exists
+        group.bets = (group.bets || []).filter(b => !(b.userId === userId && b.fightId === fightId));
+
+        const bet = {
+            id: Math.random().toString(36).substring(2, 9),
+            userId,
+            userName,
+            fightId,
+            prediction,
+            timestamp: Date.now()
+        };
+
+        group.bets.push(bet);
+        return bet;
     }
 
     getGroupMembers(groupId: string): User[] {
