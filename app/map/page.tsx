@@ -9,6 +9,7 @@ import { LocationManager } from '@/components/LocationManager';
 import { Users, Navigation, AlertTriangle, Calendar, X, MessageSquare, Map as MapIcon, Send, ChevronLeft } from 'lucide-react';
 import Image from 'next/image';
 import clsx from 'clsx';
+import { playNotificationSound } from '@/lib/sound';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,12 +116,22 @@ function MapContent() {
         }
     };
 
-    // Auto-scroll chat
+    // Auto-scroll chat & Sound
     useEffect(() => {
+        const msgs = group?.messages || [];
+        if (msgs.length > 0) {
+            const lastMsg = msgs[msgs.length - 1];
+            // Play sound if new message from others and recent (within 5s to avoid initial load spam)
+            const isRecent = Date.now() - lastMsg.timestamp < 5000;
+            if (lastMsg.senderId !== userId && isRecent && activeTab !== 'chat') {
+                playNotificationSound();
+            }
+        }
+
         if (activeTab === 'chat' || window.innerWidth > 768) {
             chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [group?.messages?.length, activeTab]);
+    }, [group?.messages, activeTab, userId]);
 
     const currentUser = members.find(u => u.id === userId);
 

@@ -22,19 +22,24 @@ export const VenueMap: React.FC<VenueMapProps> = ({
 }) => {
     // Memoize users positions to avoid excessive recalculations if not needed,
     // though projection is cheap.
-    const renderedUsers = useMemo(() => {
-        if (!calibration) return [];
-
-        return users.map((u) => {
-            if (!u.lastLocation) return null;
-            const pos = projectToMap(u.lastLocation, calibration);
-            return { ...u, mapPos: pos };
-        }).filter((u): u is User & { mapPos: { x: number, y: number } } => u !== null);
-    }, [users, calibration]);
+    const distanceLines = useMemo(() => {
+        if (!currentUser || !currentUser.mapPos) return [];
+        return renderedUsers.map(user => {
+            if (user.id === currentUser.id) return null;
+            return {
+                id: user.id,
+                x1: currentUser.mapPos!.x,
+                y1: currentUser.mapPos!.y,
+                x2: user.mapPos.x,
+                y2: user.mapPos.y,
+                dist: Math.round(haversineDistance(currentUser.lastLocation!, user.lastLocation!))
+            };
+        }).filter((l): l is { id: string, x1: number, y1: number, x2: number, y2: number, dist: number } => l !== null);
+    }, [currentUser, renderedUsers]);
 
     if (!calibration) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-black/80 text-white animate-pulse">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white animate-pulse">
                 <p className="text-xl font-bold uppercase tracking-widest text-brand-red">Cargando Mapa...</p>
                 <p className="text-xs text-gray-500 mt-2">Sincronizando satélites...</p>
             </div>
@@ -42,23 +47,56 @@ export const VenueMap: React.FC<VenueMapProps> = ({
     }
 
     return (
-        <div className="w-full h-full bg-black/20 overflow-hidden relative">
+        <div className="w-full h-full bg-black overflow-hidden relative">
             <TransformWrapper
                 initialScale={1}
-                minScale={0.5}
+                minScale={0.8} // Allow slight zoom out to see context
                 maxScale={4}
                 centerOnInit={true}
-                limitToBounds={true}
+                limitToBounds={false} // Allow panning freely to edge
                 alignmentAnimation={{ sizeX: 0, sizeY: 0 }}
             >
                 <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
-                    <div className="relative shadow-2xl" style={{ width: '1000px', height: '1000px' }}>
+                    <div className="relative shadow-2xl" style={{ width: '1500px', height: '1500px' }}>
                         {/* Map Base */}
                         <img
                             src={mapImage || "/placeholder-map.svg"}
                             alt="Venue Map"
-                            className="w-full h-full object-contain pointer-events-none select-none drop-shadow-2xl"
+                            className="w-full h-full object-contain pointer-events-none select-none"
                         />
+
+                        {/* Connections Layer (Below users, above map) */}
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                            {distanceLines.map(line => (
+                                <g key={line.id}>
+                                    <line
+                                        x1={line.x1} y1={line.y1}
+                                        x2={line.x2} y2={line.y2}
+                                        stroke="rgba(213,0,0,0.4)"
+                                        strokeWidth="2"
+                                        strokeDasharray="5,5"
+                                    />
+                                    <rect
+                                        x={(line.x1 + line.x2) / 2 - 20}
+                                        y={(line.y1 + line.y2) / 2 - 10}
+                                        width="40" height="20"
+                                        rx="4"
+                                        fill="black"
+                                        fillOpacity="0.7"
+                                    />
+                                    <text
+                                        x={(line.x1 + line.x2) / 2}
+                                        y={(line.y1 + line.y2) / 2 + 4}
+                                        textAnchor="middle"
+                                        fill="white"
+                                        fontSize="10"
+                                        fontWeight="bold"
+                                    >
+                                        {line.dist}m
+                                    </text>
+                                </g>
+                            ))}
+                        </svg>
 
                         {/* Users */}
                         {renderedUsers.map((user) => {
@@ -97,7 +135,7 @@ export const VenueMap: React.FC<VenueMapProps> = ({
             </TransformWrapper>
 
             {/* Compass / North indicator (optional aesthetic) */}
-            <div className="absolute top-4 right-4 text-white/20 pointer-events-none">
+            <div className="absolute top-4 right-4 text-white/20 pointer-events-none z-50">
                 <div className="border-2 border-current w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs">N</div>
             </div>
         </div>
