@@ -1,6 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #D50000;
+  --color-brand-dark: #0a0a0a;
+  --color-brand-silver: #C0C0C0;
+  --color-brand-accent: #FF1744;
+
+  --background-image-hero-pattern: url('/hero-bg.png');
+}
 
 :root {
   --foreground-rgb: 255, 255, 255;
