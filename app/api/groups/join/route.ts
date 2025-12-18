@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { store } from '@/lib/store';
 
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+    return NextResponse.json({ status: 'API Online', timestamp: Date.now() });
+}
+
 export async function POST(request: Request) {
     try {
         const { name, groupCode, action, calibration } = await request.json();
+
 
         if (!name) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
