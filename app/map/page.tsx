@@ -34,9 +34,33 @@ function MapContent() {
     const [chatMessage, setChatMessage] = useState('');
     const chatEndRef = useRef<HTMLDivElement>(null);
 
+    // === SIMPLE BETTING STATE ===
+    const [myLocalBets, setMyLocalBets] = useState<any[]>([]);
+
+    // Load MY bets from localStorage on mount
+    useEffect(() => {
+        if (!userId) return;
+        const myBetsKey = `pdm_my_bets_${userId}`;
+        const saved = localStorage.getItem(myBetsKey);
+        if (saved) {
+            try {
+                const bets = JSON.parse(saved);
+                setMyLocalBets(bets);
+                console.log('📂 Loaded bets from localStorage:', bets);
+            } catch (e) {
+                console.error('Failed to load bets', e);
+            }
+        }
+    }, [userId]);
+
     // Betting Helpers
     const getBetStats = (fightId: string) => {
-        const fightBets = (group?.bets || []).filter(b => b.fightId === fightId);
+        // Combine my local bets with others from server
+        const serverBets = group?.bets || [];
+        const othersBets = serverBets.filter(b => b.userId !== userId);
+        const allBets = [...othersBets, ...myLocalBets];
+        const fightBets = allBets.filter(b => b.fightId === fightId);
+
         const total = fightBets.length;
         if (total === 0) return { a: 0, b: 0, total: 0 };
         const a = fightBets.filter(b => b.prediction === 'A').length;
@@ -46,9 +70,8 @@ function MapContent() {
     const handleVote = async (fightId: string, prediction: 'A' | 'B') => {
         if (!groupCode || !userId) return;
 
-        // Optimistic Update
         const newBet = {
-            id: 'temp-' + Date.now(),
+            id: 'bet-' + Date.now(),
             userId,
             userName: currentUser?.name || 'Me',
             fightId,
@@ -56,100 +79,24 @@ function MapContent() {
             timestamp: Date.now()
         };
 
-        setGroup(prev => {
-            if (!prev) return null;
-            const otherBets = (prev.bets || []).filter(b => !(b.userId === userId && b.fightId === fightId));
-            return { ...prev, bets: [...otherBets, newBet] };
-        });
+        // Save to localStorage FIRST
+        const myBetsKey = `pdm_my_bets_${userId}`;
+        const otherBets = myLocalBets.filter(b => b.fightId !== fightId);
+        const updatedBets = [...otherBets, newBet];
 
-        // Save to localStorage (GLOBAL, not per group)
-        try {
-            const myBetsKey = `pdm_my_bets_${userId}`;
-            const existingBets = JSON.parse(localStorage.getItem(myBetsKey) || '[]');
-            const updatedMyBets = existingBets.filter((b: any) => b.fightId !== fightId);
-            updatedMyBets.push(newBet);
-            localStorage.setItem(myBetsKey, JSON.stringify(updatedMyBets));
-            console.log('💾 SAVED to localStorage:', myBetsKey, updatedMyBets);
-        } catch (e) {
-            console.error('❌ Failed to save bet locally', e);
-        }
+        localStorage.setItem(myBetsKey, JSON.stringify(updatedBets));
+        setMyLocalBets(updatedBets);
+        console.log('💾 Saved to localStorage:', newBet);
 
-        // API Call
-        try {
-            await fetch('/api/bets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ groupId: groupCode, userId, userName: currentUser?.name, fightId, prediction })
-            });
-        } catch (e) {
-            console.error('Vote failed', e);
-        }
+        // Upload to server (fire and forget)
+        fetch('/api/bets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ groupId: groupCode, userId, userName: currentUser?.name, fightId, prediction })
+        }).catch(e => console.warn('Server upload failed (non-critical):', e));
     };
 
-    // Restore and sync my bets (OPTIMIZED - only once per group)
-    const lastSyncedGroupId = useRef<string | null>(null);
 
-    useEffect(() => {
-        if (!userId || !group) {
-            console.log('⏭️ Skipping bet sync - no userId or group');
-            return;
-        }
-
-        // Only sync once per group
-        if (lastSyncedGroupId.current === group.id) {
-            return;
-        }
-
-        const myBetsKey = `pdm_my_bets_${userId}`;
-
-        console.log('🔄 Bet sync triggered - userId:', userId, 'groupId:', group.id);
-
-        try {
-            // 1. Load my bets from localStorage
-            const savedBets = localStorage.getItem(myBetsKey);
-            const myLocalBets = savedBets ? JSON.parse(savedBets) : [];
-
-            console.log('📂 Loaded from localStorage:', myBetsKey, myLocalBets);
-
-            // 2. Restore if we have local bets
-            if (myLocalBets.length > 0) {
-                console.log('📊 Syncing my bets:', myLocalBets);
-
-                // 3. Inject my local bets into the group state IMMEDIATELY
-                setGroup(prev => {
-                    if (!prev) return null;
-                    const serverBets = prev.bets || [];
-                    // Remove my old bets from server
-                    const othersBets = serverBets.filter(b => b.userId !== userId);
-                    // Add my fresh local bets
-                    const merged = [...othersBets, ...myLocalBets];
-                    console.log('✅ Merged bets:', merged);
-                    return { ...prev, bets: merged };
-                });
-
-                // 4. Upload each bet to server (fire and forget)
-                myLocalBets.forEach((bet: any) => {
-                    fetch('/api/bets', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            groupId: groupCode,
-                            userId: bet.userId,
-                            userName: bet.userName,
-                            fightId: bet.fightId,
-                            prediction: bet.prediction
-                        })
-                    }).catch(e => console.warn('Bet upload failed:', e));
-                });
-            } else {
-                console.log('ℹ️ No local bets to restore');
-            }
-
-            lastSyncedGroupId.current = group.id;
-        } catch (e) {
-            console.error('❌ Failed to sync bets', e);
-        }
-    }, [userId, group?.id, groupCode]); // Only trigger when group ID changes
 
     // Validate session
     useEffect(() => {
@@ -420,7 +367,7 @@ function MapContent() {
 
                             {FIGHTS.map(fight => {
                                 const stats = getBetStats(fight.id);
-                                const myVote = group?.bets?.find(b => b.userId === userId && b.fightId === fight.id);
+                                const myVote = myLocalBets.find(b => b.fightId === fight.id);
 
                                 return (
                                     <div key={fight.id} className="bg-zinc-900 border border-white/10 rounded-xl p-4 shadow-lg">
