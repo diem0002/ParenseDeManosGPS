@@ -53,6 +53,27 @@ function MapContent() {
         }
     }, [userId]);
 
+    // Upload MY bets to server when entering a room (so others can see them)
+    useEffect(() => {
+        if (!userId || !groupCode || !group || myLocalBets.length === 0) return;
+
+        console.log('📤 Uploading my bets to server for group:', groupCode);
+
+        myLocalBets.forEach((bet: any) => {
+            fetch('/api/bets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    groupId: groupCode,
+                    userId: bet.userId,
+                    userName: bet.userName,
+                    fightId: bet.fightId,
+                    prediction: bet.prediction
+                })
+            }).catch(e => console.warn('Bet upload failed (non-critical):', e));
+        });
+    }, [group?.id, myLocalBets, userId, groupCode]); // Upload when group changes or bets change
+
     // Betting Helpers
     const getBetStats = (fightId: string) => {
         // Combine my local bets with others from server
